@@ -31,7 +31,7 @@ class PriorityQueue:
         return result
 
 
-def getSolution(listNodes):
+def getSolutionUCS(listNodes):
     solution = [listNodes[0][0]]
     idx = 0
     while True:
@@ -62,7 +62,7 @@ def uninformedCostSearch(graph, root, goal):
         node = frontier.dequeue()
         listNodes.insert(0, node)
         if node[0] == goal:
-            return getSolution(listNodes)
+            return getSolutionUCS(listNodes)
         explored.append(node)
 
         cost = node[1][0] + 1
@@ -84,32 +84,45 @@ def uninformedCostSearch(graph, root, goal):
                     if neightbor[1][0] < frontier.queue[neightborIndex][1][0]:
                         frontier.queue[neightborIndex] = neightbor
 
+def getSolution(parentMap, goal):
+    curr = goal
+    solution = []
+    while (curr != None):
+        solution.insert(0, curr)
+        try:
+            curr = parentMap[curr]
+        except KeyError:
+            curr = None
+    return solution
 
 def depthFirstSearch(graph, root, goal):
     stack = [root]
     visited = []
+    parentMap = {}
     while len(stack) != 0:
         node = stack[-1]
         del stack[-1]  # stack.pop()
         if node not in visited:
             visited.append(node)
             if node == goal:
-                return visited
+                return getSolution(parentMap, goal)
             for neightbor in graph[node]:
                 if neightbor in visited:
                     continue
                 stack.append(neightbor)  # stack.push()
+                parentMap[neightbor] = node
     return None
 
 def heuristic(node, goal):
     D = 1
-    D2 = 1.5
+    D2 = 2
     dx = abs(node[0] - goal[0])
     dy = abs(node[1] - goal[1])
     return D*(dx+dy) + (D2 - 2*D)*min(dx, dy)
 
 def greedyBestFirstSearch(graph, root, goal):
     visited = []
+    parentMap = {}
     queue = PriorityQueue()
     node = (root, heuristic(root, goal))
     queue.enqueueHeuristic(node)
@@ -117,10 +130,11 @@ def greedyBestFirstSearch(graph, root, goal):
         node = queue.dequeue()
         visited.append(node[0])
         if node[0] == goal:
-            return visited
+            return getSolution(parentMap, goal)
         for neightbor in graph[node[0]]:
             if neightbor in visited:
                 continue
             neightbor = (neightbor, heuristic(neightbor, goal))
             queue.enqueueHeuristic(neightbor)
+            parentMap[neightbor[0]] = node[0]
     return None

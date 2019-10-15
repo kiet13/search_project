@@ -5,6 +5,8 @@ from enum import Enum
 import argparse
 from drawing import *
 from search import *
+import tkinter as tk
+from tkinter import messagebox
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-i', '--input', metavar='', type=str, help="Input txt file")
@@ -54,6 +56,15 @@ def getNeightbors(gridX, gridY):
                     listNeightbors.append((nearX, nearY))
     return listNeightbors
 
+def message_box(subject, content):
+    root = tk.Tk()
+    root.attributes("-topmost", True)
+    root.withdraw()
+    messagebox.showinfo(subject, content)
+    try:
+        root.destroy()
+    except:
+        pass
 
 if __name__ == '__main__':
 
@@ -87,7 +98,7 @@ if __name__ == '__main__':
     grid = Grid(25, rows, columns)
     pygame.init()
     SCREEN_SIZE = (800, 600)
-    screen = pygame.display.set_mode(SCREEN_SIZE, RESIZABLE, 32)
+    screen = pygame.display.set_mode(SCREEN_SIZE, 0, 32)
 
     screen.lock()
     # draw boundary
@@ -101,7 +112,7 @@ if __name__ == '__main__':
         
         if idx == 0:
             array2DGrid[point[0]][point[1]] = State.START
-            drawCircle(screen, grid, (0, 0, 255), point[0], point[1])
+            drawCircle(screen, grid, (0, 0, 128), point[0], point[1])
         elif idx == len(listPoints) - 1:
             array2DGrid[point[0]][point[1]] = State.END
             drawCircle(screen, grid, (255, 0, 0), point[0], point[1])
@@ -129,7 +140,8 @@ if __name__ == '__main__':
         path = greedyBestFirstSearch(graph, listPoints[0], listPoints[-1])     
 
     if path is None:
-        print('Path not found')
+        message_box("Warning", "Path not found")
+        exit()
 
     r, g = 204, 204
     screen.lock()
@@ -137,13 +149,18 @@ if __name__ == '__main__':
         pygame.event.get()
         if idx == len(path)-1:
             drawCircle(screen, grid, (255, 0, 255), point[0], point[1])
-        elif idx > 0:
-            drawCircle(screen, grid, (r, g, 255), point[0], point[1])
+            drawCircle(screen, grid, (32, 32, 32), path[idx-1][0], path[idx-1][1])
+        elif idx > 0 and idx != 1:
+            drawCircle(screen, grid, (0, 0, 128), point[0], point[1])
+            drawCircle(screen, grid, (32, 32, 32), path[idx-1][0], path[idx-1][1])
+        elif idx == 1:
+            drawCircle(screen, grid, (0, 0, 128), point[0], point[1])
+            drawCircle(screen, grid, (0, 0, 255), path[idx-1][0], path[idx-1][1])
         pygame.display.update()
-        pygame.time.wait(500)
-        if r > 51 and g > 51:
-            r -= 5
-            g -= 5
+        pygame.time.wait(400)
+        # if r > 0 and g > 0:
+        #     r -= 1
+        #     g -= 1
     screen.unlock()
 
     while True:
