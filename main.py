@@ -10,7 +10,7 @@ from tkinter import messagebox
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-i', '--input', metavar='', type=str, help="Input txt file")
-parser.add_argument('-a', '--algorithm', metavar='', type=str, help="Algorithm for searching")
+parser.add_argument('-a', '--algorithm', nargs='?', metavar='', type=str, help="Algorithm for searching")
 parser.add_argument('-m', '--move', nargs='?', default=False, metavar='', type=bool, help="Input txt file")
 args = parser.parse_args()
 
@@ -61,35 +61,50 @@ class Polygon:
 
     def move(self, surface, grid):
         import random
-        gridX = random.randint(-1, 1)
-        gridY = random.randint(-1, 1)
         self.remove(surface, grid, self.color)
 
         newPeakPoints = self.peakPoints[:]
-        for i in range(len(newPeakPoints)):
+        randomTimes = 0
+        i = 0
+        gridX = gridY = 0
+        while i < len(newPeakPoints):
+            while abs(gridX) == abs(gridY):
+                gridX = random.randint(-1, 1)
+                gridY = random.randint(-1, 1)
             newX = newPeakPoints[i][0] + gridX
             newY = newPeakPoints[i][1] + gridY
             if newX <= 0 or newY <= 0 or newX >= columns or newY >= rows:
-                self.draw(surface, grid)
-                return False
+                if randomTimes == 3:
+                    self.draw(surface, grid)
+                    randomTimes = 0
+                    return False
+                else:
+                    randomTimes += 1
+                    continue
             if (array2DGrid[newX][newY] == State.OBSTACLE or
                 array2DGrid[newX][newY] == State.END or
                 array2DGrid[newX][newY] == State.START):
-                self.draw(surface, grid)
-                return False
+                if randomTimes == 3:
+                    self.draw(surface, grid)
+                    randomTimes = 0
+                    return False
+                else:
+                    randomTimes += 1
+                    continue
             newPeakPoints[i] = (newX, newY)
+            i += 1
         
         newPolygon = Polygon(newPeakPoints, self.color)
         for edge in newPolygon.edges:
             for point in edge:
                 if newX <= 0 or newY <= 0 or newX >= columns or newY >= rows:
-                    self.draw(surface, grid)
-                    return False
+                        self.draw(surface, grid)
+                        return False
                 if (array2DGrid[point[0]][point[1]] == State.OBSTACLE or
                     array2DGrid[point[0]][point[1]] == State.END or
-                    array2DGrid[point[0]][point[1]] == State.START): 
-                    self.draw(surface, grid)  
-                    return False
+                    array2DGrid[point[0]][point[1]] == State.START):   
+                        self.draw(surface, grid)
+                        return False
         self.remove(surface, grid, (0, 0, 0))
         newPolygon.draw(surface, grid)
         
@@ -177,7 +192,7 @@ if __name__ == '__main__':
     grid = Grid(25, rows, columns)
     pygame.init()
     SCREEN_SIZE = (800, 600)
-    screen = pygame.display.set_mode(SCREEN_SIZE, 0, 32)
+    screen = pygame.display.set_mode(SCREEN_SIZE, 0, 0)
 
     screen.lock()
     # draw boundary
@@ -267,7 +282,7 @@ if __name__ == '__main__':
             grid.draw(screen, (255, 255, 255))
             pygame.display.update()
             screen.unlock()
-            pygame.time.wait(300)
+            pygame.time.wait(500)
 
     while True:
         for event in pygame.event.get():
