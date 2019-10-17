@@ -16,10 +16,23 @@ class PriorityQueue:
                 break
         self.queue.insert(idx, newNode)
 
-    def enqueueHeuristic(self , newNode):
+    def enqueueGBFS(self , newNode):
         idx = 0
         for node in self.queue:
             if newNode[1] >= node[1]:
+                idx += 1
+            else:
+                break
+        self.queue.insert(idx, newNode)
+
+    def enqueueAStar(self, newNode):
+        idx = 0
+        for node in self.queue:
+            fn1 = newNode[1] + newNode[2]
+            fn2 = node[1] + node[2]
+            hn1 = newNode[2]
+            hn2 = node[2]
+            if (fn1 > fn2) or (fn1 == fn2 and hn1 > hn2):
                 idx += 1
             else:
                 break
@@ -69,7 +82,7 @@ def uninformedCostSearch(graph, root, goal):
         # check neighbors
         for neightbor in graph[node[0]]:
             if checkDiagonal(node[0], neightbor) == True:
-                neightbor = (neightbor, (cost + 0.5, node[0]))
+                neightbor = (neightbor, (cost + 1, node[0]))
             else:
                 neightbor = (neightbor, (cost, node[0]))
             neightborIndex = next((idx for idx, value in enumerate(explored)
@@ -113,19 +126,24 @@ def depthFirstSearch(graph, root, goal):
                 parentMap[neightbor] = node
     return None
 
-def heuristic(node, goal):
+def heuristic(root, node, goal):
     D = 1
-    D2 = 2
-    dx = abs(node[0] - goal[0])
-    dy = abs(node[1] - goal[1])
-    return D*(dx+dy) + (D2 - 2*D)*min(dx, dy)
+    D2 = 1.5
+    dx1 = abs(node[0] - goal[0])
+    dy1 = abs(node[1] - goal[1])
+    result = D*(dx1+dy1) + (D2 - 2*D)*min(dx1, dy1)
+    dx2 = root[0] - goal[0]
+    dy2 = root[1] - goal[1]
+    cross = abs(dx1*dy2 - dx2*dy1)
+    result += cross*0.001
+    return result
 
 def greedyBestFirstSearch(graph, root, goal):
     visited = []
     parentMap = {}
     queue = PriorityQueue()
-    node = (root, heuristic(root, goal))
-    queue.enqueueHeuristic(node)
+    node = (root, heuristic(root, root, goal))
+    queue.enqueueGBFS(node)
     while not queue.isEmpty():
         node = queue.dequeue()
         visited.append(node[0])
@@ -134,7 +152,67 @@ def greedyBestFirstSearch(graph, root, goal):
         for neightbor in graph[node[0]]:
             if neightbor in visited:
                 continue
-            neightbor = (neightbor, heuristic(neightbor, goal))
-            queue.enqueueHeuristic(neightbor)
+            neightbor = (neightbor, heuristic(root, neightbor, goal))
+            queue.enqueueGBFS(neightbor)
             parentMap[neightbor[0]] = node[0]
     return None
+
+def astarSearch(graph, root, goal):
+    visited = []
+    parentMap = {}
+    cost = 1
+    queue = PriorityQueue()
+    node = (root, 0, heuristic(root, root, goal))
+    queue.enqueueAStar(node)
+    while not queue.isEmpty():
+        node = queue.dequeue()
+        visited.append(node[0])
+        if node[0] == goal:
+            return getSolution(parentMap, goal)
+        for neightbor in graph[node[0]]:
+            if neightbor in visited:
+                continue
+            if checkDiagonal(node[0], neightbor) == True:
+                cost = 2
+            else:
+                cost = 1
+            neightbor = (neightbor, node[1]+cost, heuristic(root, neightbor, goal))
+            queue.enqueueAStar(neightbor)
+            parentMap[neightbor[0]] = node[0]
+    return None
+
+
+def calculateCost(path):
+    cost = 0
+    for i in range(1, len(path)):
+        cost += 1
+        if checkDiagonal(path[i], path[i-1]) == True:
+            cost += 0.5
+    return cost 
+
+def pickUpPoints(graph, listPoints):
+    noVisited = listPoints[1:-1]
+    root = listPoints[0]
+    goal = listPoints[-1]
+    visited = [root]
+    allPaths = []
+    while len(noVisited) > 0:
+        costList = []
+        paths = []
+        for node in noVisited:
+            path = uninformedCostSearch(graph, visited[-1], node)
+            paths.append(path)
+            costList.append(calculateCost(path))
+        idx = costList.index(min(costList))
+        visited.append(noVisited[idx])
+        allPaths.append(paths[idx])
+        del noVisited[idx]
+    
+    allPaths.append(uninformedCostSearch(graph, visited[-1], goal))
+    return allPaths
+
+            
+
+
+
+    
