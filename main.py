@@ -134,13 +134,20 @@ def drawPath(path):
         pygame.event.get()
         if idx == len(path)-1:
             drawCircle(screen, grid, (255, 0, 255), point[0], point[1])
-            drawCircle(screen, grid, (32, 32, 32), path[idx-1][0], path[idx-1][1])
+            if idx != 1:
+                drawCircle(screen, grid, (128, 128, 128), path[idx-1][0], path[idx-1][1])
+            else:
+                drawCircle(screen, grid, (0, 0, 255), path[idx-1][0], path[idx-1][1])
         elif idx > 0 and idx != 1:
-            drawCircle(screen, grid, (0, 0, 128), point[0], point[1])
-            drawCircle(screen, grid, (32, 32, 32), path[idx-1][0], path[idx-1][1])
+            drawCircle(screen, grid, (0, 0, 255), point[0], point[1])
+            drawCircle(screen, grid, (128, 128, 128), path[idx-1][0], path[idx-1][1])
         elif idx == 1:
-            drawCircle(screen, grid, (0, 0, 128), point[0], point[1])
-            drawCircle(screen, grid, (0, 0, 255), path[idx-1][0], path[idx-1][1])
+            drawCircle(screen, grid, (0, 0, 255), point[0], point[1])
+            if (array2DGrid[path[idx-1][0]][path[idx-1][1]] == State.PICKUP_POINT):
+                drawCircle(screen, grid, (0, 255, 255), path[idx-1][0], path[idx-1][1])
+            elif (array2DGrid[path[idx-1][0]][path[idx-1][1]] == State.START):
+                drawCircle(screen, grid, (0, 0, 255), path[idx-1][0], path[idx-1][1])
+        
         pygame.display.update()
         pygame.time.wait(300)
         # if r > 0 and g > 0:
@@ -203,10 +210,9 @@ if __name__ == '__main__':
         polygon.draw(screen, grid)
     # draw start, end and pickup points
     for idx, point in enumerate(listPoints):
-        
         if idx == 0:
             array2DGrid[point[0]][point[1]] = State.START
-            drawCircle(screen, grid, (0, 0, 128), point[0], point[1])
+            drawCircle(screen, grid, (0, 0, 255), point[0], point[1])
         elif idx == len(listPoints) - 1:
             array2DGrid[point[0]][point[1]] = State.END
             drawCircle(screen, grid, (255, 0, 0), point[0], point[1])
@@ -241,21 +247,31 @@ if __name__ == '__main__':
                 exit()
             drawPath(path)
         else:
-            allPaths = pickUpPoints(graph, listPoints)
-            for path in allPaths:
-                if path is None:
-                    message_box("Warning", "Path not found")
-                    exit()
-                drawPath(path)
+            if numPolygons != 0:
+                allPaths = pickUpPoints(graph, listPoints)
+                for path in allPaths:
+                    if path is None:
+                        message_box("Warning", "Path not found")
+                        exit()
+                    drawPath(path)
+            else:
+                orderPoints = pickUpPointsWithoutObstacle(graph, listPoints)
+                for i in range(len(orderPoints)-1):
+                    path = greedyBestFirstSearch(graph, orderPoints[i], orderPoints[i+1])
+                    drawPath(path)
     else:
        
         path = None
         head = listPoints[0]
         tail = listPoints[-1]
+        count = 0
         while True:
             for event in pygame.event.get():
                 if event.type == QUIT:
                     exit()
+            if count == 10:
+                message_box("Warning", "I can't wait anymore! Please try again!")
+                exit()
             screen.lock()
             for i in range(len(listPolygons)):
                 listPolygons[i].move(screen, grid)
@@ -268,7 +284,10 @@ if __name__ == '__main__':
                             graph[(i, j)] = getNeightbors(i, j)
                 
                 path = uninformedCostSearch(graph, head, tail)
+                if path is None:
+                    count += 1
                 if path is not None:
+                    count = 0
                     array2DGrid[head[0]][head[1]] = State.CAN_MOVE
                     drawCube(screen, grid, (0, 0, 0), head[0], head[1])
                     del path[0]

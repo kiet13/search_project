@@ -126,23 +126,23 @@ def depthFirstSearch(graph, root, goal):
                 parentMap[neightbor] = node
     return None
 
-def heuristic(root, node, goal):
+def heuristic(node, goal):
     D = 1
     D2 = 1.5
     dx1 = abs(node[0] - goal[0])
     dy1 = abs(node[1] - goal[1])
     result = D*(dx1+dy1) + (D2 - 2*D)*min(dx1, dy1)
-    dx2 = root[0] - goal[0]
-    dy2 = root[1] - goal[1]
-    cross = abs(dx1*dy2 - dx2*dy1)
-    result += cross*0.001
+    # dx2 = root[0] - goal[0]
+    # dy2 = root[1] - goal[1]
+    # cross = abs(dx1*dy2 - dx2*dy1)
+    # result += cross*0.001
     return result
 
 def greedyBestFirstSearch(graph, root, goal):
     visited = []
     parentMap = {}
     queue = PriorityQueue()
-    node = (root, heuristic(root, root, goal))
+    node = (root, heuristic(root, goal))
     queue.enqueueGBFS(node)
     while not queue.isEmpty():
         node = queue.dequeue()
@@ -152,7 +152,7 @@ def greedyBestFirstSearch(graph, root, goal):
         for neightbor in graph[node[0]]:
             if neightbor in visited:
                 continue
-            neightbor = (neightbor, heuristic(root, neightbor, goal))
+            neightbor = (neightbor, heuristic(neightbor, goal))
             queue.enqueueGBFS(neightbor)
             parentMap[neightbor[0]] = node[0]
     return None
@@ -162,7 +162,7 @@ def astarSearch(graph, root, goal):
     parentMap = {}
     cost = 1
     queue = PriorityQueue()
-    node = (root, 0, heuristic(root, root, goal))
+    node = (root, 0, heuristic(root, goal))
     queue.enqueueAStar(node)
     while not queue.isEmpty():
         node = queue.dequeue()
@@ -173,10 +173,10 @@ def astarSearch(graph, root, goal):
             if neightbor in visited:
                 continue
             if checkDiagonal(node[0], neightbor) == True:
-                cost = 2
+                cost = 1.5
             else:
                 cost = 1
-            neightbor = (neightbor, node[1]+cost, heuristic(root, neightbor, goal))
+            neightbor = (neightbor, node[1]+cost, heuristic(neightbor, goal))
             queue.enqueueAStar(neightbor)
             parentMap[neightbor[0]] = node[0]
     return None
@@ -211,8 +211,23 @@ def pickUpPoints(graph, listPoints):
     allPaths.append(uninformedCostSearch(graph, visited[-1], goal))
     return allPaths
 
-            
-
+def pickUpPointsWithoutObstacle(graph, listPoints):
+    unvisited = listPoints[1:-1]
+    root = listPoints[0]
+    goal = listPoints[-1]
+    visited = [root]
+    allPaths = []
+    while len(unvisited) > 0:
+        heuristicList = []
+        paths = []
+        for node in unvisited:
+            hn =  heuristic(visited[-1], node)
+            heuristicList.append(hn)
+        idx = heuristicList.index(min(heuristicList))
+        visited.append(unvisited[idx])
+        del unvisited[idx]
+    visited.append(goal)
+    return visited
 
 
     

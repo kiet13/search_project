@@ -19,7 +19,7 @@ class Grid:
         for _ in range(self.rows):
             y += self.sizeCube
             pygame.draw.line(surface, color, (0, y), (map_width, y))
-
+    
     def parseCoordinate(self, gridX, gridY):
         map_width = self.sizeCube * self.columns
         map_height = self.sizeCube * self.rows
